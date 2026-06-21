@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AdGenie — AI Ad Manager</title>
+<style>
+  :root{
+    --bg:#06070a;
+    --bg-soft:#0b0e14;
+    --card:#10131c;
+    --card-border:#1d2230;
+    --neon:#00f0c0;
+    --neon-soft:rgba(0,240,192,0.15);
+    --violet:#7c5cff;
+    --violet-soft:rgba(124,92,255,0.18);
+    --text:#eef1f7;
+    --text-dim:#8993a8;
+    --text-faint:#4d5468;
+    --danger:#ff5c7a;
+    --gold:#ffb84d;
+    --font-display:'Space Grotesk',-apple-system,sans-serif;
+    --font-body:'Inter',-apple-system,sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--font-body);
+    background:var(--bg);
+    color:var(--text);
+    overflow:hidden;
+  }
+
+  #app{
+    max-width:430px;
+    margin:0 auto;
+    height:100vh;
+    height:100dvh;
+    position:relative;
+    background:
+      radial-gradient(ellipse 600px 300px at 50% -10%, var(--violet-soft), transparent 60%),
+      radial-gradient(ellipse 500px 260px at 90% 100%, var(--neon-soft), transparent 60%),
+      var(--bg);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 20px 10px;
+    flex-shrink:0;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:17px;
+    letter-spacing:0.2px;
+  }
+  .brand-mark{
+    width:26px;height:26px;
+    border-radius:8px;
+    background:linear-gradient(135deg,var(--neon),var(--violet));
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 14px var(--neon-soft);
+    flex-shrink:0;
+  }
+  .brand-mark svg{width:14px;height:14px;}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .status-pill{
+    font-family:var(--font-mono);
+    font-size:10px;
+    color:var(--text-faint);
+    border:1px solid var(--card-border);
+    padding:4px 9px;
+    border-radius:20px;
+    letter-spacing:0.5px;
+  }
+
+  /* ---------- Screen container ---------- */
+  .screens{
+    flex:1;
+    position:relative;
+    overflow:hidden;
+  }
+  .screen{
+    position:absolute;
+    inset:0;
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding:6px 20px 100px;
+    opacity:0;
+    transform:translateX(24px);
+    pointer-events:none;
+    transition:opacity .32s ease, transform .32s ease;
+    -webkit-overflow-scrolling:touch;
+  }
+  .screen.active{
+    opacity:1;
+    transform:translateX(0);
+    pointer-events:auto;
+  }
+  .screen.exit-left{transform:translateX(-24px);}
+  .screen::-webkit-scrollbar{display:none;}
+
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--neon);
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  h1.screen-title{
+    font-family:var(--font-display);
+    font-size:25px;
+    font-weight:600;
+    line-height:1.25;
+    margin-bottom:6px;
+  }
+  p.screen-sub{
+    color:var(--text-dim);
+    font-size:13.5px;
+    line-height:1.5;
+    margin-bottom:24px;
+  }
+
+  /* ---------- City select ---------- */
+  .search-box{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:14px;
+    padding:13px 16px;
+    margin-bottom:18px;
+  }
+  .search-box svg{flex-shrink:0;opacity:.5;}
+  .search-box input{
+    background:none;border:none;outline:none;
+    color:var(--text);font-size:14.5px;font-family:var(--font-body);
+    width:100%;
+  }
+  .search-box input::placeholder{color:var(--text-faint);}
+
+  .mode-toggle{
+    display:flex;
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:12px;
+    padding:4px;
+    margin-bottom:16px;
+  }
+  .mode-opt{
+    flex:1;text-align:center;
+    padding:9px 4px;
+    font-size:12.5px;
+    border-radius:9px;
+    color:var(--text-dim);
+    cursor:pointer;
+    transition:all .2s;
+  }
+  .mode-opt.active{
+    background:var(--bg-soft);
+    color:var(--neon);
+    font-weight:600;
+  }
+
+  .radius-row{
+    display:flex;gap:8px;
+    margin-bottom:16px;
+  }
+  .radius-chip{
+    flex:1;text-align:center;
+    padding:10px 6px;
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:11px;
+    font-size:12.5px;
+    font-weight:500;
+    color:var(--text-dim);
+    cursor:pointer;
+    transition:all .2s;
+  }
+  .radius-chip.active{
+    border-color:var(--violet);
+    color:var(--text);
+    background:var(--violet-soft);
+  }
+
+  .pincode-status{
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    margin-bottom:14px;
+    min-height:16px;
+  }
+  .pincode-status.loading{color:var(--text-faint);}
+  .pincode-status.error{color:var(--danger);}
+  .pincode-status.ok{color:var(--neon);}
+
+  .pincode-result{
+    background:var(--card);
+    border:1px solid var(--neon);
+    border-radius:14px;
+    padding:15px 16px;
+    margin-bottom:16px;
+    display:none;
+  }
+  .pincode-result.show{display:block;}
+  .pincode-result-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .pincode-result-code{font-family:var(--font-display);font-size:18px;font-weight:700;}
+  .pincode-result-radius{
+    font-family:var(--font-mono);font-size:10.5px;
+    color:var(--neon);background:var(--neon-soft);
+    padding:3px 9px;border-radius:20px;
+  }
+  .pincode-area-list{display:flex;flex-direction:column;gap:7px;}
+  .pincode-area-row{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:12.5px;
+    padding:8px 10px;
+    background:var(--bg-soft);
+    border-radius:9px;
+  }
+  .pincode-area-name{color:var(--text);font-weight:500;}
+  .pincode-area-meta{color:var(--text-faint);font-size:11px;font-family:var(--font-mono);}
+
+  .recent-pins{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+  .recent-pin-chip{
+    font-size:11.5px;font-family:var(--font-mono);
+    padding:7px 12px;
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:20px;
+    color:var(--text-dim);
+    cursor:pointer;
+  }
+  .recent-pin-chip:active{transform:scale(0.96);}
+
+  .city-grid{display:flex;flex-direction:column;gap:10px;}
+  .city-card{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:14px;
+    padding:15px 16px;
+    cursor:pointer;
+    transition:border-color .2s, background .2s, transform .15s;
+  }
+  .city-card:active{transform:scale(0.98);}
+  .city-card.selected{
+    border-color:var(--neon);
+    background:linear-gradient(180deg, var(--neon-soft), transparent);
+  }
+  .city-left{display:flex;align-items:center;gap:12px;}
+  .city-icon{
+    width:38px;height:38px;border-radius:10px;
+    background:var(--bg-soft);
+    display:flex;align-items:center;justify-content:center;
+    font-size:17px;
+  }
+  .city-name{font-size:14.5px;font-weight:600;}
+  .city-meta{font-size:11.5px;color:var(--text-faint);font-family:var(--font-mono);margin-top:2px;}
+  .city-check{
+    width:21px;height:21px;border-radius:50%;
+    border:1.5px solid var(--card-border);
+    display:flex;align-items:center;justify-content:center;
+    transition:all .2s;
+    flex-shrink:0;
+  }
+  .city-card.selected .city-check{
+    background:var(--neon);border-color:var(--neon);
+  }
+  .city-card.selected .city-check svg{opacity:1;}
+  .city-check svg{opacity:0;width:11px;height:11px;}
+
+  /* ---------- Budget screen ---------- */
+  .budget-display{
+    text-align:center;
+    padding:26px 0 18px;
+  }
+  .budget-amount{
+    font-family:var(--font-display);
+    font-size:46px;
+    font-weight:700;
+    background:linear-gradient(135deg,var(--neon),#7ce8d4);
+    -webkit-background-clip:text;
+    background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+  .budget-amount-label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-faint);
+    letter-spacing:1px;
+    margin-top:4px;
+  }
+  .slider-wrap{padding:8px 4px 4px;}
+  input[type="range"]{
+    -webkit-appearance:none;
+    width:100%;
+    height:5px;
+    border-radius:3px;
+    background:var(--card-border);
+    outline:none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:22px;height:22px;
+    border-radius:50%;
+    background:var(--neon);
+    box-shadow:0 0 0 5px var(--neon-soft), 0 2px 8px rgba(0,0,0,.4);
+    cursor:pointer;
+  }
+  .slider-labels{
+    display:flex;justify-content:space-between;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--text-faint);
+    margin-top:8px;
+  }
+
+  .preset-row{
+    display:flex;gap:8px;
+    margin:20px 0 24px;
+  }
+  .preset-chip{
+    flex:1;
+    text-align:center;
+    padding:11px 6px;
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:11px;
+    font-size:12.5px;
+    font-weight:500;
+    color:var(--text-dim);
+    cursor:pointer;
+    transition:all .2s;
+  }
+  .preset-chip.active{
+    border-color:var(--violet);
+    color:var(--text);
+    background:var(--violet-soft);
+  }
+
+  .duration-row{
+    display:flex;
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:12px;
+    padding:4px;
+    margin-bottom:20px;
+  }
+  .duration-opt{
+    flex:1;text-align:center;
+    padding:10px 4px;
+    font-size:12.5px;
+    border-radius:9px;
+    color:var(--text-dim);
+    cursor:pointer;
+    transition:all .2s;
+  }
+  .duration-opt.active{
+    background:var(--bg-soft);
+    color:var(--neon);
+    font-weight:600;
+  }
+
+  .payment-section{margin-top:6px;}
+  .section-label{
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin-bottom:10px;
+  }
+  .pay-grid{display:flex;flex-direction:column;gap:9px;}
+  .pay-card{
+    display:flex;align-items:center;gap:12px;
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:13px;
+    padding:13px 15px;
+    cursor:pointer;
+    transition:all .2s;
+  }
+  .pay-card.selected{border-color:var(--neon);}
+  .pay-icon{
+    width:34px;height:34px;border-radius:9px;
+    background:var(--bg-soft);
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;flex-shrink:0;
+  }
+  .pay-name{font-size:13.5px;font-weight:600;}
+  .pay-sub{font-size:11px;color:var(--text-faint);margin-top:1px;}
+  .pay-radio{
+    margin-left:auto;
+    width:18px;height:18px;border-radius:50%;
+    border:1.5px solid var(--card-border);
+    position:relative;flex-shrink:0;
+  }
+  .pay-card.selected .pay-radio{border-color:var(--neon);}
+  .pay-card.selected .pay-radio::after{
+    content:'';position:absolute;inset:3px;
+    border-radius:50%;background:var(--neon);
+  }
+
+  /* ---------- AI thinking screen ---------- */
+  .ai-loading{
+    height:100%;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    text-align:center;
+    padding-bottom:60px;
+  }
+  .ai-orb{
+    width:84px;height:84px;
+    border-radius:50%;
+    background:conic-gradient(from 0deg, var(--neon), var(--violet), var(--gold), var(--neon));
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:28px;
+    animation:spin 3s linear infinite;
+    position:relative;
+  }
+  .ai-orb::before{
+    content:'';
+    position:absolute;inset:4px;
+    border-radius:50%;
+    background:var(--bg);
+  }
+  .ai-orb-inner{
+    position:relative;
+    font-size:28px;
+    z-index:1;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .ai-status-text{
+    font-family:var(--font-display);
+    font-size:17px;
+    font-weight:600;
+    margin-bottom:8px;
+    min-height:24px;
+  }
+  .ai-status-sub{
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    color:var(--text-faint);
+  }
+  .ai-steps{
+    margin-top:32px;
+    display:flex;flex-direction:column;gap:11px;
+    width:100%;
+    max-width:280px;
+  }
+  .ai-step{
+    display:flex;align-items:center;gap:10px;
+    font-size:12.5px;
+    color:var(--text-faint);
+    transition:color .3s;
+  }
+  .ai-step.done{color:var(--text-dim);}
+  .ai-step.active{color:var(--neon);}
+  .ai-step-dot{
+    width:16px;height:16px;border-radius:50%;
+    border:1.5px solid var(--card-border);
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .3s;
+  }
+  .ai-step.done .ai-step-dot{background:var(--neon);border-color:var(--neon);}
+  .ai-step.active .ai-step-dot{border-color:var(--neon);box-shadow:0 0 0 3px var(--neon-soft);}
+  .ai-step-dot svg{width:9px;height:9px;opacity:0;}
+  .ai-step.done .ai-step-dot svg{opacity:1;}
+
+  /* ---------- Options screen ---------- */
+  .option-card{
+    background:var(--card);
+    border:1.5px solid var(--card-border);
+    border-radius:16px;
+    padding:18px;
+    margin-bottom:14px;
+    cursor:pointer;
+    transition:all .2s;
+    position:relative;
+  }
+  .option-card.selected{
+    border-color:var(--neon);
+    box-shadow:0 0 0 1px var(--neon), 0 8px 24px -8px var(--neon-soft);
+  }
+  .option-card.recommended::before{
+    content:'AI RECOMMENDED';
+    position:absolute;top:-9px;left:16px;
+    background:var(--neon);
+    color:#06070a;
+    font-family:var(--font-mono);
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:0.8px;
+    padding:3px 9px;
+    border-radius:6px;
+  }
+  .option-head{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    margin-bottom:12px;
+  }
+  .option-title{font-family:var(--font-display);font-size:15.5px;font-weight:600;}
+  .option-tag{
+    font-family:var(--font-mono);font-size:10px;color:var(--text-faint);
+    margin-top:3px;
+  }
+  .option-score{
+    text-align:right;flex-shrink:0;
+  }
+  .option-score-val{font-family:var(--font-display);font-size:19px;font-weight:700;color:var(--neon);}
+  .option-score-label{font-size:9px;color:var(--text-faint);font-family:var(--font-mono);}
+
+  .option-stats{
+    display:grid;grid-template-columns:1fr 1fr;
+    gap:10px;margin-bottom:13px;
+  }
+  .stat-box{
+    background:var(--bg-soft);
+    border-radius:10px;
+    padding:9px 11px;
+  }
+  .stat-val{font-size:14px;font-weight:600;font-family:var(--font-display);}
+  .stat-key{font-size:10px;color:var(--text-faint);margin-top:1px;}
+
+  .audience-tags{display:flex;flex-wrap:wrap;gap:6px;}
+  .tag{
+    font-size:10.5px;
+    padding:5px 10px;
+    border-radius:20px;
+    background:var(--bg-soft);
+    color:var(--text-dim);
+    border:1px solid var(--card-border);
+  }
+
+  /* ---------- Confirm screen ---------- */
+  .confirm-summary{
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:16px;
+    padding:18px;
+    margin-bottom:16px;
+  }
+  .summary-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:11px 0;
+    border-bottom:1px solid var(--card-border);
+    font-size:13px;
+  }
+  .summary-row:last-child{border-bottom:none;}
+  .summary-key{color:var(--text-faint);}
+  .summary-val{font-weight:600;text-align:right;}
+
+  .preview-card{
+    background:linear-gradient(160deg, var(--card), var(--bg-soft));
+    border:1px solid var(--card-border);
+    border-radius:16px;
+    overflow:hidden;
+    margin-bottom:20px;
+  }
+  .preview-img{
+    height:140px;
+    background:linear-gradient(135deg, var(--violet-soft), var(--neon-soft));
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px;color:var(--text-faint);
+    font-family:var(--font-mono);
+  }
+  .preview-body{padding:13px 15px;}
+  .preview-headline{font-size:13.5px;font-weight:600;margin-bottom:4px;}
+  .preview-text{font-size:12px;color:var(--text-dim);line-height:1.4;}
+  .preview-cta{
+    display:inline-block;margin-top:10px;
+    background:var(--neon);color:#06070a;
+    font-size:11.5px;font-weight:700;
+    padding:6px 14px;border-radius:8px;
+  }
+
+  /* ---------- Live/Dashboard screen ---------- */
+  .live-banner{
+    display:flex;align-items:center;gap:10px;
+    background:linear-gradient(135deg, rgba(0,240,192,.12), rgba(124,92,255,.08));
+    border:1px solid var(--neon);
+    border-radius:14px;
+    padding:14px 16px;
+    margin-bottom:20px;
+  }
+  .live-dot{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--neon);
+    box-shadow:0 0 10px var(--neon);
+    animation:pulse 1.5s ease-in-out infinite;
+    flex-shrink:0;
+  }
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+  .live-text{font-size:13px;font-weight:600;}
+  .live-sub{font-size:10.5px;color:var(--text-faint);font-family:var(--font-mono);margin-top:1px;}
+
+  .metric-grid{
+    display:grid;grid-template-columns:1fr 1fr;
+    gap:10px;margin-bottom:20px;
+  }
+  .metric-card{
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:14px;
+    padding:14px 15px;
+  }
+  .metric-val{font-family:var(--font-display);font-size:22px;font-weight:700;}
+  .metric-key{font-size:11px;color:var(--text-faint);margin-top:2px;}
+  .metric-delta{font-size:10.5px;margin-top:6px;font-weight:600;}
+  .metric-delta.up{color:var(--neon);}
+  .metric-delta.down{color:var(--danger);}
+
+  .chart-card{
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:14px;
+    padding:16px 16px 8px;
+    margin-bottom:18px;
+  }
+  .chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .chart-title{font-size:12.5px;font-weight:600;color:var(--text-dim);}
+  .chart-svg{width:100%;height:90px;display:block;}
+
+  .insight-card{
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:14px;
+    padding:14px 15px;
+    margin-bottom:10px;
+    display:flex;gap:11px;align-items:flex-start;
+  }
+  .insight-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+  .insight-text{font-size:12px;line-height:1.5;color:var(--text-dim);}
+  .insight-text b{color:var(--text);font-weight:600;}
+
+  /* ---------- Bottom action bar ---------- */
+  .action-bar{
+    position:absolute;
+    bottom:0;left:0;right:0;
+    padding:14px 20px 22px;
+    background:linear-gradient(0deg, var(--bg) 60%, transparent);
+    flex-shrink:0;
+    z-index:5;
+  }
+  .btn{
+    width:100%;
+    padding:16px;
+    border-radius:14px;
+    border:none;
+    font-family:var(--font-body);
+    font-size:14.5px;
+    font-weight:600;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:all .2s;
+  }
+  .btn:active{transform:scale(0.98);}
+  .btn-primary{
+    background:linear-gradient(135deg,var(--neon),#00c9a0);
+    color:#06070a;
+    box-shadow:0 4px 20px -4px var(--neon-soft);
+  }
+  .btn-primary:disabled{
+    opacity:0.35;
+    box-shadow:none;
+    cursor:not-allowed;
+  }
+  .btn-ghost{
+    background:var(--card);
+    border:1px solid var(--card-border);
+    color:var(--text);
+  }
+  .btn-row{display:flex;gap:10px;}
+  .btn-row .btn{flex:1;}
+
+  .back-link{
+    display:inline-flex;align-items:center;gap:5px;
+    color:var(--text-faint);
+    font-size:12.5px;
+    margin-bottom:14px;
+    cursor:pointer;
+  }
+
+  /* progress dots */
+  .progress-dots{
+    display:flex;gap:5px;
+    padding:0 20px 10px;
+    flex-shrink:0;
+  }
+  .progress-dots span{
+    height:3px;flex:1;
+    background:var(--card-border);
+    border-radius:2px;
+    overflow:hidden;
+  }
+  .progress-dots span i{
+    display:block;height:100%;width:0%;
+    background:var(--neon);
+    transition:width .4s ease;
+  }
+  .progress-dots span.filled i{width:100%;}
+
+  ::-webkit-scrollbar{width:0;}
+
+  /* ---------- Meta connector ---------- */
+  .meta-connect-card{
+    background:linear-gradient(135deg, rgba(24,119,242,0.1), rgba(24,119,242,0.03));
+    border:1px solid rgba(24,119,242,0.35);
+    border-radius:14px;
+    padding:15px 16px;
+    margin-bottom:20px;
+    display:flex;align-items:center;gap:12px;
+  }
+  .meta-icon{
+    width:38px;height:38px;border-radius:10px;
+    background:#1877f2;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .meta-icon svg{width:19px;height:19px;}
+  .meta-connect-text{flex:1;}
+  .meta-connect-title{font-size:13px;font-weight:600;}
+  .meta-connect-sub{font-size:11px;color:var(--text-faint);margin-top:1px;}
+  .meta-connect-btn{
+    background:#1877f2;
+    color:#fff;
+    border:none;
+    font-size:12px;
+    font-weight:600;
+    padding:9px 14px;
+    border-radius:9px;
+    cursor:pointer;
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .meta-connect-btn:active{transform:scale(0.96);}
+  .meta-connect-card.connected{
+    border-color:var(--neon);
+    background:linear-gradient(135deg, var(--neon-soft), transparent);
+  }
+  .meta-connect-card.connected .meta-connect-btn{
+    background:var(--bg-soft);
+    color:var(--neon);
+    border:1px solid var(--neon);
+  }
+  .meta-connected-badge{
+    display:inline-flex;align-items:center;gap:5px;
+    font-family:var(--font-mono);font-size:10px;
+    color:var(--neon);
+    margin-top:2px;
+  }
+  .meta-connecting-spinner{
+    width:13px;height:13px;
+    border:2px solid rgba(255,255,255,.3);
+    border-top-color:#fff;
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+    display:inline-block;
+  }
+
+  /* ---------- Business details form ---------- */
+  .field-group{margin-bottom:16px;}
+  .field-label{
+    font-size:12px;font-weight:600;
+    color:var(--text-dim);
+    margin-bottom:7px;
+    display:block;
+  }
+  .field-input, .field-textarea{
+    width:100%;
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:12px;
+    padding:13px 15px;
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:13.5px;
+    outline:none;
+    transition:border-color .2s;
+  }
+  .field-input:focus, .field-textarea:focus{border-color:var(--neon);}
+  .field-textarea{resize:none;min-height:70px;line-height:1.5;}
+  .field-input::placeholder, .field-textarea::placeholder{color:var(--text-faint);}
+  .field-hint{font-size:10.5px;color:var(--text-faint);margin-top:5px;}
+
+  /* ---------- Image upload ---------- */
+  .upload-zone{
+    border:1.5px dashed var(--card-border);
+    border-radius:14px;
+    padding:24px 16px;
+    text-align:center;
+    cursor:pointer;
+    transition:all .2s;
+    margin-bottom:20px;
+  }
+  .upload-zone:hover, .upload-zone.drag{border-color:var(--neon);background:var(--neon-soft);}
+  .upload-zone-icon{font-size:26px;margin-bottom:8px;}
+  .upload-zone-text{font-size:13px;font-weight:600;margin-bottom:3px;}
+  .upload-zone-sub{font-size:11px;color:var(--text-faint);}
+  .upload-preview-wrap{position:relative;margin-bottom:20px;}
+  .upload-preview-img{
+    width:100%;height:160px;
+    object-fit:cover;
+    border-radius:14px;
+    display:block;
+    border:1px solid var(--card-border);
+  }
+  .upload-remove-btn{
+    position:absolute;top:10px;right:10px;
+    width:28px;height:28px;border-radius:50%;
+    background:rgba(6,7,10,0.8);
+    border:1px solid var(--card-border);
+    color:var(--text);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:14px;
+  }
+
+  /* ---------- Copy regenerate ---------- */
+  .regen-btn{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:11px;font-weight:600;
+    color:var(--violet);
+    background:var(--violet-soft);
+    border:none;
+    padding:6px 11px;
+    border-radius:8px;
+    cursor:pointer;
+    margin-top:10px;
+  }
+  .regen-btn:active{transform:scale(0.96);}
+  .regen-btn:disabled{opacity:0.5;}
+  .copy-source-tag{
+    font-family:var(--font-mono);
+    font-size:9.5px;
+    color:var(--violet);
+    background:var(--violet-soft);
+    padding:2px 8px;
+    border-radius:20px;
+    display:inline-block;
+    margin-bottom:8px;
+  }
+</style>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+
+<div id="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" stroke="#06070a" stroke-width="2" stroke-linejoin="round"/></svg>
+      </div>
+      AdGenie
+    </div>
+    <div class="topbar-right">
+      <span class="status-pill" id="statusPill">DEMO MODE</span>
+    </div>
+  </div>
+
+  <div class="progress-dots" id="progressDots">
+    <span class="filled"><i></i></span>
+    <span><i></i></span>
+    <span><i></i></span>
+    <span><i></i></span>
+    <span><i></i></span>
+  </div>
+
+  <div class="screens">
+
+    <!-- SCREEN 1: Pincode Select -->
+    <div class="screen active" data-screen="1">
+      <div class="eyebrow">Step 1 of 4</div>
+      <h1 class="screen-title">Kahan ad chalani hai?</h1>
+      <p class="screen-sub">India ka koi bhi pincode daalo — AI us area ke audience data ke hisaab se targeting banayega.</p>
+
+      <div class="meta-connect-card" id="metaConnectCard">
+        <div class="meta-icon">
+          <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2C6.48 2 2 6.48 2 12c0 5 3.66 9.13 8.44 9.88v-6.99H7.9v-2.89h2.54V9.79c0-2.5 1.49-3.89 3.78-3.89 1.09 0 2.23.2 2.23.2v2.45h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.45 2.89h-2.33v6.99C18.34 21.13 22 17 22 12c0-5.52-4.48-10-10-10z"/></svg>
+        </div>
+        <div class="meta-connect-text">
+          <div class="meta-connect-title" id="metaTitle">Meta Ads account connect karo</div>
+          <div class="meta-connect-sub" id="metaSub">Campaign launch karne ke liye zaroori hai</div>
+        </div>
+        <button class="meta-connect-btn" id="metaConnectBtn">Connect</button>
+      </div>
+
+      <div class="mode-toggle">
+        <div class="mode-opt active" data-mode="single">Single Pincode</div>
+        <div class="mode-opt" data-mode="radius">Pincode + Radius</div>
+      </div>
+
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="pincodeSearch" placeholder="6-digit pincode daalo... e.g. 226001" inputmode="numeric" maxlength="6">
+      </div>
+
+      <div class="radius-row" id="radiusRow" style="display:none;">
+        <div class="radius-chip" data-km="5">5 km</div>
+        <div class="radius-chip active" data-km="10">10 km</div>
+        <div class="radius-chip" data-km="20">20 km</div>
+        <div class="radius-chip" data-km="50">50 km</div>
+      </div>
+
+      <div class="pincode-status" id="pincodeStatus"></div>
+
+      <div class="pincode-result" id="pincodeResult"></div>
+
+      <div class="section-label" id="recentLabel" style="display:none;">Recently used</div>
+      <div class="recent-pins" id="recentPins"></div>
+    </div>
+
+    <!-- SCREEN 2: Budget + Payment -->
+    <div class="screen" data-screen="2">
+      <div class="eyebrow">Step 2 of 4</div>
+      <h1 class="screen-title">Budget aur payment</h1>
+      <p class="screen-sub">Daily budget set karo. AI isi budget ko best audience segments mein automatically split karega.</p>
+
+      <div class="budget-display">
+        <div class="budget-amount" id="budgetAmount">₹500</div>
+        <div class="budget-amount-label">PER DAY</div>
+      </div>
+
+      <div class="slider-wrap">
+        <input type="range" id="budgetSlider" min="100" max="5000" step="50" value="500">
+        <div class="slider-labels"><span>₹100</span><span>₹5,000</span></div>
+      </div>
+
+      <div class="preset-row">
+        <div class="preset-chip" data-amt="300">₹300</div>
+        <div class="preset-chip active" data-amt="500">₹500</div>
+        <div class="preset-chip" data-amt="1000">₹1,000</div>
+        <div class="preset-chip" data-amt="2000">₹2,000</div>
+      </div>
+
+      <div class="section-label">Campaign duration</div>
+      <div class="duration-row">
+        <div class="duration-opt" data-days="3">3 din</div>
+        <div class="duration-opt active" data-days="7">7 din</div>
+        <div class="duration-opt" data-days="14">14 din</div>
+        <div class="duration-opt" data-days="30">30 din</div>
+      </div>
+
+      <div class="payment-section">
+        <div class="section-label">Payment method</div>
+        <div class="pay-grid" id="payGrid"></div>
+      </div>
+
+      <div class="section-label">Business details — AI ad copy ke liye</div>
+      <div class="field-group">
+        <label class="field-label">Business / Product ka naam</label>
+        <input type="text" class="field-input" id="bizName" placeholder="e.g. Sharma Electronics, Solar Panel Installation">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Kya bech rahe ho / offer kya hai</label>
+        <textarea class="field-textarea" id="bizOffer" placeholder="e.g. AC repair aur servicing, 20% discount is week, free home visit"></textarea>
+        <div class="field-hint">Jitna detail doge, AI utna better ad copy likhega</div>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: AI Thinking -->
+    <div class="screen" data-screen="3">
+      <div class="ai-loading">
+        <div class="ai-orb"><div class="ai-orb-inner">✨</div></div>
+        <div class="ai-status-text" id="aiStatusText">Analyzing audience data...</div>
+        <div class="ai-status-sub" id="aiStatusSub">Iss me 10-15 second lagenge</div>
+
+        <div class="ai-steps" id="aiSteps">
+          <div class="ai-step" data-step="0">
+            <div class="ai-step-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#06070a" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+            City demographics scan
+          </div>
+          <div class="ai-step" data-step="1">
+            <div class="ai-step-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#06070a" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+            Audience segments banaye
+          </div>
+          <div class="ai-step" data-step="2">
+            <div class="ai-step-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#06070a" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+            Ad creative generate kiya
+          </div>
+          <div class="ai-step" data-step="3">
+            <div class="ai-step-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#06070a" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+            Budget allocation optimize kiya
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: Options -->
+    <div class="screen" data-screen="4">
+      <div class="eyebrow">Step 3 of 4</div>
+      <h1 class="screen-title">3 campaign options ready</h1>
+      <p class="screen-sub">AI ne tumhare city aur budget ke hisaab se ye options banaye hain. Ek choose karo.</p>
+
+      <div id="optionsContainer"></div>
+    </div>
+
+    <!-- SCREEN 5: Confirm -->
+    <div class="screen" data-screen="5">
+      <div class="eyebrow">Step 4 of 4</div>
+      <h1 class="screen-title">Final check</h1>
+      <p class="screen-sub">Sab sahi lage to launch karo — campaign turant live ho jayega.</p>
+
+      <div class="confirm-summary" id="confirmSummary"></div>
+
+      <div class="section-label">Ad creative</div>
+      <div class="upload-zone" id="uploadZone" style="display:none;">
+        <div class="upload-zone-icon">🖼️</div>
+        <div class="upload-zone-text">Apni creative image upload karo</div>
+        <div class="upload-zone-sub">Tap karo ya drag-drop karo · JPG/PNG</div>
+      </div>
+      <input type="file" id="uploadInput" accept="image/*" style="display:none;">
+
+      <div class="upload-preview-wrap" id="uploadPreviewWrap" style="display:none;">
+        <img class="upload-preview-img" id="uploadPreviewImg" src="" alt="Ad creative">
+        <div class="upload-remove-btn" id="uploadRemoveBtn">✕</div>
+      </div>
+
+      <div class="section-label">Ad preview</div>
+      <div class="preview-card">
+        <div class="preview-img" id="previewImgBox">📍 Sample creative preview</div>
+        <div class="preview-body">
+          <div class="copy-source-tag" id="copySourceTag">AI GENERATED</div>
+          <div class="preview-headline" id="previewHeadline">Best deals near you!</div>
+          <div class="preview-text" id="previewText">Apne shehar ki sabse achi offers — abhi check karo.</div>
+          <div class="preview-cta">Shop Now</div>
+          <div><button class="regen-btn" id="regenBtn">↻ Regenerate copy</button></div>
+        </div>
+      </div>
+
+      <div class="meta-connect-card" id="metaWarningCard" style="display:none;">
+        <div class="meta-icon">
+          <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2C6.48 2 2 6.48 2 12c0 5 3.66 9.13 8.44 9.88v-6.99H7.9v-2.89h2.54V9.79c0-2.5 1.49-3.89 3.78-3.89 1.09 0 2.23.2 2.23.2v2.45h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.45 2.89h-2.33v6.99C18.34 21.13 22 17 22 12c0-5.52-4.48-10-10-10z"/></svg>
+        </div>
+        <div class="meta-connect-text">
+          <div class="meta-connect-title">Meta Ads account zaroori hai</div>
+          <div class="meta-connect-sub">Launch se pehle connect karo</div>
+        </div>
+        <button class="meta-connect-btn" id="metaWarningBtn">Connect</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 6: Live Dashboard -->
+    <div class="screen" data-screen="6">
+      <div class="live-banner">
+        <div class="live-dot"></div>
+        <div>
+          <div class="live-text" id="liveText">Campaign Live Hai 🎉</div>
+          <div class="live-sub" id="liveSince">Started just now • Demo data</div>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="metric-val" id="mImpressions">0</div>
+          <div class="metric-key">Impressions</div>
+          <div class="metric-delta up">↑ live</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="mClicks">0</div>
+          <div class="metric-key">Clicks</div>
+          <div class="metric-delta up">↑ live</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="mCtr">0%</div>
+          <div class="metric-key">CTR</div>
+          <div class="metric-delta up">Healthy</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="mCpc">₹0</div>
+          <div class="metric-key">Avg. CPC</div>
+          <div class="metric-delta down">↓ optimizing</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-head">
+          <div class="chart-title">Clicks — last 7 days</div>
+        </div>
+        <svg class="chart-svg" viewBox="0 0 300 90" id="chartSvg"></svg>
+      </div>
+
+      <div class="section-label">AI insights</div>
+      <div class="insight-card">
+        <div class="insight-icon">💡</div>
+        <div class="insight-text"><b>Evening 6–9 PM</b> mein sabse zyada engagement aa raha hai. Budget thoda shift kar sakte hain.</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-icon">📈</div>
+        <div class="insight-text">Is audience segment ka CTR average se <b>23% zyada</b> hai — performance acchi chal rahi hai.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="action-bar" id="actionBar"></div>
+
+</div>
+
+<script>
+(function(){
+
+  // ============================================
+  // Backend server URL — update if hosted elsewhere
+  // ============================================
+  const BACKEND_URL = 'http://localhost:4000';
+
+
+  // ---------------- DATA ----------------
+  const paymentMethods = [
+    {name:"UPI", sub:"GPay, PhonePe, Paytm, BHIM", icon:"📲", razorpayMethod:"upi"},
+    {name:"Net Banking", sub:"All major banks", icon:"🏦", razorpayMethod:"netbanking"},
+  ];
+
+  let state = {
+    pincode: '',
+    pincodeMode: 'single', // 'single' or 'radius'
+    radiusKm: 10,
+    areaLabel: '', // human readable e.g. "Hazratganj, Lucknow"
+    city: '', // derived city name for copy/display
+    budget: 500,
+    duration: 7,
+    payment: paymentMethods[0].name,
+    selectedOption: null,
+    metaConnected: false,
+    bizName: '',
+    bizOffer: '',
+    uploadedImageDataUrl: null,
+    aiCopyFailed: false,
+  };
+
+  let recentPincodes = JSON.parse(sessionStorage ? '[]' : '[]'); // in-memory only (no localStorage per artifact rules)
+  recentPincodes = [];
+
+  // ---------------- META CONNECT (real OAuth via backend) ----------------
+  const metaCard = document.getElementById('metaConnectCard');
+  const metaBtn = document.getElementById('metaConnectBtn');
+  const metaTitle = document.getElementById('metaTitle');
+  const metaSub = document.getElementById('metaSub');
+  state.metaAdAccounts = [];
+  state.selectedAdAccount = null;
+
+  function renderMetaCard(){
+    if(state.metaConnected){
+      metaCard.classList.add('connected');
+      metaTitle.textContent = `Meta Ads — Connected`;
+      const userName = state.metaUser ? state.metaUser.name : 'Account';
+      metaSub.innerHTML = `<span class="meta-connected-badge">● ${userName}</span>`;
+      metaBtn.textContent = 'Disconnect';
+    } else {
+      metaCard.classList.remove('connected');
+      metaTitle.textContent = 'Meta Ads account connect karo';
+      metaSub.textContent = 'Campaign launch karne ke liye zaroori hai';
+      metaBtn.textContent = 'Connect';
+    }
+    updateNextBtn();
+  }
+
+  async function checkMetaStatus(){
+    try{
+      const res = await fetch(`${BACKEND_URL}/auth/meta/status`, { credentials: 'include' });
+      const data = await res.json();
+      state.metaConnected = data.connected;
+      state.metaUser = data.user || null;
+      renderMetaCard();
+    }catch(err){
+      console.warn('Backend se Meta status check nahi ho paya — backend chal raha hai?', err);
+    }
+  }
+
+  async function triggerMetaConnect(btnEl){
+    if(state.metaConnected){
+      try{
+        await fetch(`${BACKEND_URL}/auth/meta/logout`, { method:'POST', credentials:'include' });
+      }catch(e){}
+      state.metaConnected = false;
+      state.metaUser = null;
+      renderMetaCard();
+      return;
+    }
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<span class="meta-connecting-spinner"></span>';
+    try{
+      const res = await fetch(`${BACKEND_URL}/auth/meta/login`, { credentials: 'include' });
+      const data = await res.json();
+      if(data.authUrl){
+        // Open Meta's real OAuth consent screen in a popup
+        const popup = window.open(data.authUrl, 'meta_oauth', 'width=600,height=700');
+        const pollTimer = setInterval(async ()=>{
+          if(popup.closed){
+            clearInterval(pollTimer);
+            btnEl.disabled = false;
+            await checkMetaStatus();
+            if(state.metaConnected){
+              const warnCard = document.getElementById('metaWarningCard');
+              if(warnCard) warnCard.style.display = 'none';
+            }
+          }
+        }, 800);
+      } else {
+        throw new Error(data.error || 'Auth URL nahi mila');
+      }
+    }catch(err){
+      btnEl.disabled = false;
+      renderMetaCard();
+      alert('Meta se connect nahi ho paya: ' + err.message + '\n\nCheck karo backend chal raha hai (' + BACKEND_URL + ') aur .env mein META_APP_ID/SECRET sahi hain.');
+    }
+  }
+  metaBtn.addEventListener('click', ()=> triggerMetaConnect(metaBtn));
+  document.getElementById('metaWarningBtn').addEventListener('click', function(){ triggerMetaConnect(this); });
+  renderMetaCard();
+  checkMetaStatus();
+
+  // Handle redirect-back query params (some browsers block popups — fallback to full redirect)
+  (function handleOAuthRedirectParams(){
+    const params = new URLSearchParams(window.location.search);
+    if(params.get('meta_connected') === 'true'){
+      checkMetaStatus();
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    if(params.get('meta_error')){
+      alert('Meta connect error: ' + params.get('meta_error'));
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  })();
+
+  // ---------------- PINCODE MODE TOGGLE ----------------
+  const radiusRow = document.getElementById('radiusRow');
+  document.querySelectorAll('.mode-opt').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      document.querySelectorAll('.mode-opt').forEach(o=>o.classList.remove('active'));
+      opt.classList.add('active');
+      state.pincodeMode = opt.dataset.mode;
+      radiusRow.style.display = state.pincodeMode === 'radius' ? 'flex' : 'none';
+      if(state.pincode) lookupPincode(state.pincode);
+    });
+  });
+  document.querySelectorAll('.radius-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('.radius-chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      state.radiusKm = Number(chip.dataset.km);
+      renderPincodeResult();
+    });
+  });
+
+  // ---------------- PINCODE LOOKUP (India Post public API) ----------------
+  const pincodeInput = document.getElementById('pincodeSearch');
+  const pincodeStatus = document.getElementById('pincodeStatus');
+  const pincodeResultBox = document.getElementById('pincodeResult');
+  let lastLookupData = null;
+  let lookupTimer = null;
+
+  async function lookupPincode(code){
+    pincodeStatus.className = 'pincode-status loading';
+    pincodeStatus.textContent = 'Pincode check kar rahe hain...';
+    pincodeResultBox.classList.remove('show');
+    try{
+      const res = await fetch(`https://api.postalpincode.in/pincode/${code}`);
+      const data = await res.json();
+      if(!data || !data[0] || data[0].Status !== 'Success' || !data[0].PostOffice || data[0].PostOffice.length === 0){
+        pincodeStatus.className = 'pincode-status error';
+        pincodeStatus.textContent = '✕ Ye pincode nahi mila. Dobara check karo.';
+        state.pincode = '';
+        lastLookupData = null;
+        updateNextBtn();
+        return;
+      }
+      const offices = data[0].PostOffice;
+      const primary = offices[0];
+      state.pincode = code;
+      state.city = primary.District;
+      state.areaLabel = `${primary.Name}, ${primary.District}`;
+      lastLookupData = offices;
+
+      pincodeStatus.className = 'pincode-status ok';
+      pincodeStatus.textContent = `✓ ${offices.length} area${offices.length>1?'s':''} mil gaye`;
+      renderPincodeResult();
+
+      if(!recentPincodes.includes(code)){
+        recentPincodes.unshift(code);
+        recentPincodes = recentPincodes.slice(0,5);
+        renderRecentPins();
+      }
+      updateNextBtn();
+    }catch(err){
+      pincodeStatus.className = 'pincode-status error';
+      pincodeStatus.textContent = '✕ Network issue — internet check karo.';
+      state.pincode = '';
+      updateNextBtn();
+    }
+  }
+
+  function renderPincodeResult(){
+    if(!lastLookupData) return;
+    const primary = lastLookupData[0];
+    const radiusBadge = state.pincodeMode === 'radius'
+      ? `<span class="pincode-result-radius">${state.radiusKm} km radius</span>`
+      : `<span class="pincode-result-radius">Exact pincode</span>`;
+    const areaRows = lastLookupData.slice(0,4).map(o=>`
+      <div class="pincode-area-row">
+        <span class="pincode-area-name">${o.Name}</span>
+        <span class="pincode-area-meta">${o.BranchType}</span>
+      </div>
+    `).join('');
+    pincodeResultBox.innerHTML = `
+      <div class="pincode-result-head">
+        <span class="pincode-result-code">${state.pincode}</span>
+        ${radiusBadge}
+      </div>
+      <div class="pincode-area-list">${areaRows}</div>
+      <div class="pincode-area-meta" style="margin-top:8px;">${primary.District}, ${primary.State}</div>
+    `;
+    pincodeResultBox.classList.add('show');
+  }
+
+  function renderRecentPins(){
+    const wrap = document.getElementById('recentPins');
+    const label = document.getElementById('recentLabel');
+    if(recentPincodes.length === 0){ label.style.display='none'; wrap.innerHTML=''; return; }
+    label.style.display = 'block';
+    wrap.innerHTML = recentPincodes.map(p=>`<div class="recent-pin-chip" data-pin="${p}">${p}</div>`).join('');
+    wrap.querySelectorAll('.recent-pin-chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        pincodeInput.value = chip.dataset.pin;
+        lookupPincode(chip.dataset.pin);
+      });
+    });
+  }
+
+  pincodeInput.addEventListener('input', (e)=>{
+    const val = e.target.value.replace(/\D/g,'').slice(0,6);
+    e.target.value = val;
+    clearTimeout(lookupTimer);
+    if(val.length === 6){
+      lookupTimer = setTimeout(()=> lookupPincode(val), 400);
+    } else {
+      pincodeStatus.className = 'pincode-status';
+      pincodeStatus.textContent = val.length > 0 ? `${6-val.length} digit aur baki hai` : '';
+      pincodeResultBox.classList.remove('show');
+      state.pincode = '';
+      updateNextBtn();
+    }
+  });
+
+  // ---------------- RENDER: PAYMENT ----------------
+  const payGrid = document.getElementById('payGrid');
+  function renderPayments(){
+    payGrid.innerHTML = '';
+    paymentMethods.forEach(p=>{
+      const div = document.createElement('div');
+      div.className = 'pay-card' + (state.payment === p.name ? ' selected' : '');
+      div.innerHTML = `
+        <div class="pay-icon">${p.icon}</div>
+        <div>
+          <div class="pay-name">${p.name}</div>
+          <div class="pay-sub">${p.sub}</div>
+        </div>
+        <div class="pay-radio"></div>
+      `;
+      div.onclick = ()=>{ state.payment = p.name; renderPayments(); };
+      payGrid.appendChild(div);
+    });
+  }
+  renderPayments();
+
+  // ---------------- BUDGET SLIDER ----------------
+  const slider = document.getElementById('budgetSlider');
+  const budgetAmount = document.getElementById('budgetAmount');
+  function setBudget(val){
+    state.budget = val;
+    slider.value = val;
+    budgetAmount.textContent = '₹' + Number(val).toLocaleString('en-IN');
+    document.querySelectorAll('.preset-chip').forEach(c=>{
+      c.classList.toggle('active', Number(c.dataset.amt) === val);
+    });
+  }
+  slider.addEventListener('input', e=> setBudget(Number(e.target.value)));
+  document.querySelectorAll('.preset-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=> setBudget(Number(chip.dataset.amt)));
+  });
+  document.querySelectorAll('.duration-opt').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      document.querySelectorAll('.duration-opt').forEach(o=>o.classList.remove('active'));
+      opt.classList.add('active');
+      state.duration = Number(opt.dataset.days);
+    });
+  });
+
+  document.getElementById('bizName').addEventListener('input', e=> state.bizName = e.target.value);
+  document.getElementById('bizOffer').addEventListener('input', e=> state.bizOffer = e.target.value);
+
+  // ---------------- IMAGE UPLOAD ----------------
+  const uploadZone = document.getElementById('uploadZone');
+  const uploadInput = document.getElementById('uploadInput');
+  const uploadPreviewWrap = document.getElementById('uploadPreviewWrap');
+  const uploadPreviewImg = document.getElementById('uploadPreviewImg');
+  const uploadRemoveBtn = document.getElementById('uploadRemoveBtn');
+
+  uploadZone.addEventListener('click', ()=> uploadInput.click());
+  uploadInput.addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      state.uploadedImageDataUrl = ev.target.result;
+      uploadPreviewImg.src = state.uploadedImageDataUrl;
+      uploadPreviewWrap.style.display = 'block';
+      uploadZone.style.display = 'none';
+      updatePreviewImageBox();
+    };
+    reader.readAsDataURL(file);
+  });
+  uploadRemoveBtn.addEventListener('click', ()=>{
+    state.uploadedImageDataUrl = null;
+    uploadInput.value = '';
+    uploadPreviewWrap.style.display = 'none';
+    uploadZone.style.display = 'block';
+    updatePreviewImageBox();
+  });
+  function updatePreviewImageBox(){
+    const box = document.getElementById('previewImgBox');
+    if(state.uploadedImageDataUrl){
+      box.style.backgroundImage = `url(${state.uploadedImageDataUrl})`;
+      box.style.backgroundSize = 'cover';
+      box.style.backgroundPosition = 'center';
+      box.textContent = '';
+    } else {
+      box.style.backgroundImage = 'none';
+      box.textContent = '📍 Sample creative preview';
+    }
+  }
+
+  // ---------------- AI OPTIONS GENERATION (fake) ----------------
+  function generateTargetingMath(){
+    const baseCPC = (state.budget < 500) ? 3.2 : (state.budget < 1500 ? 2.6 : 2.1);
+    return [
+      {
+        title: "Wide Reach",
+        tag: "Awareness focused",
+        recommended: false,
+        score: 78,
+        reach: Math.round(state.budget * 95),
+        clicks: Math.round(state.budget / (baseCPC + 0.6)),
+        cpc: (baseCPC + 0.6).toFixed(1),
+        tags: ["18-45 age", "All genders", "Broad interest", state.city],
+        angle: "broad awareness, sabko dikhe, simple aur catchy"
+      },
+      {
+        title: "Smart Balance",
+        tag: "AI-optimized mix",
+        recommended: true,
+        score: 94,
+        reach: Math.round(state.budget * 68),
+        clicks: Math.round(state.budget / baseCPC),
+        cpc: baseCPC.toFixed(1),
+        tags: ["25-40 age", "High intent", "Local shoppers", state.city + (state.pincodeMode==='radius' ? ` + ${state.radiusKm}km` : '')],
+        angle: "balanced, trust-building, local connection emphasize karo"
+      },
+      {
+        title: "High Intent",
+        tag: "Conversion focused",
+        recommended: false,
+        score: 86,
+        reach: Math.round(state.budget * 42),
+        clicks: Math.round(state.budget / (baseCPC - 0.4)),
+        cpc: (baseCPC - 0.4).toFixed(1),
+        tags: ["28-50 age", "Past buyers lookalike", "Premium intent"],
+        angle: "urgency aur direct conversion push, strong CTA"
+      },
+    ];
+  }
+
+  // Fallback copy templates if AI call fails or no business details given
+  function fallbackCopy(opt){
+    return {
+      headline: `${state.city} ke liye special offer!`,
+      text: `Apne aas paas ki sabse achi offers ${state.city} mein. Abhi check karo.`
+    };
+  }
+
+  async function generateAiCopy(targetingOptions){
+    const bizName = state.bizName.trim();
+    const bizOffer = state.bizOffer.trim();
+
+    // No business details given — skip AI call, use generic fallback
+    if(!bizName && !bizOffer){
+      state.aiCopyFailed = false;
+      return targetingOptions.map(opt => ({...opt, ...fallbackCopy(opt), aiGenerated:false}));
+    }
+
+    try{
+      // Calls our own backend (not Anthropic directly) so the API key never
+      // touches the browser — backend holds ANTHROPIC_API_KEY in its .env
+      const response = await fetch(`${BACKEND_URL}/api/ai/generate-copy`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bizName, bizOffer,
+          city: state.city,
+          areaLabel: state.areaLabel,
+          budget: state.budget,
+          targetingOptions: targetingOptions.map(o => ({ title:o.title, angle:o.angle }))
+        })
+      });
+      const data = await response.json();
+      if(!data.success || !data.variants || data.variants.length < 3) throw new Error(data.error || 'Bad response shape');
+
+      state.aiCopyFailed = false;
+      return targetingOptions.map((opt, i) => ({
+        ...opt,
+        headline: data.variants[i].headline,
+        text: data.variants[i].text,
+        aiGenerated: true
+      }));
+    }catch(err){
+      console.warn('AI copy backend call failed:', err.message);
+      state.aiCopyFailed = true;
+      return targetingOptions.map(opt => ({...opt, ...fallbackCopy(opt), aiGenerated:false}));
+    }
+  }
+
+  let currentOptions = [];
+  async function renderOptions(){
+    const targetingOptions = generateTargetingMath();
+    currentOptions = await generateAiCopy(targetingOptions);
+    renderOptionCards();
+  }
+
+  function renderOptionCards(){
+    const container = document.getElementById('optionsContainer');
+    container.innerHTML = '';
+    currentOptions.forEach((opt, i)=>{
+      const div = document.createElement('div');
+      div.className = 'option-card' + (opt.recommended ? ' recommended' : '');
+      div.innerHTML = `
+        <div class="option-head">
+          <div>
+            <div class="option-title">${opt.title}</div>
+            <div class="option-tag">${opt.tag}</div>
+          </div>
+          <div class="option-score">
+            <div class="option-score-val">${opt.score}</div>
+            <div class="option-score-label">AI SCORE</div>
+          </div>
+        </div>
+        <div class="option-stats">
+          <div class="stat-box"><div class="stat-val">${opt.reach.toLocaleString('en-IN')}</div><div class="stat-key">Est. reach/day</div></div>
+          <div class="stat-box"><div class="stat-val">~${opt.clicks}</div><div class="stat-key">Est. clicks/day</div></div>
+          <div class="stat-box"><div class="stat-val">₹${opt.cpc}</div><div class="stat-key">Avg. CPC</div></div>
+          <div class="stat-box"><div class="stat-val">${state.duration}d</div><div class="stat-key">Duration</div></div>
+        </div>
+        <div class="audience-tags">${opt.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      `;
+      div.onclick = ()=>{
+        state.selectedOption = i;
+        document.querySelectorAll('.option-card').forEach(c=>c.classList.remove('selected'));
+        div.classList.add('selected');
+        updateNextBtn();
+      };
+      container.appendChild(div);
+    });
+  }
+
+  // ---------------- AI LOADING SEQUENCE ----------------
+  const aiTexts = [
+    {text:"City demographics scan ho raha hai...", sub:state=>`${state.city} ke audience data ko analyze kar rahe hain`},
+    {text:"Audience segments banaye ja rahe hain...", sub:()=>"Best performing groups identify kar rahe hain"},
+    {text:"Ad creative generate ho raha hai...", sub:()=>"Headlines aur copy likhe ja rahe hain"},
+    {text:"Budget allocation optimize ho raha hai...", sub:()=>"Final touches ho rahe hain"},
+  ];
+  function runAiSequence(onDone){
+    const steps = document.querySelectorAll('.ai-step');
+    const statusText = document.getElementById('aiStatusText');
+    const statusSub = document.getElementById('aiStatusSub');
+    steps.forEach(s=>s.classList.remove('done','active'));
+    let i = 0;
+    let stepsDone = false;
+    let dataReady = false;
+    let resultData = null;
+
+    function tick(){
+      if(i > 0) steps[i-1].classList.remove('active');
+      if(i > 0) steps[i-1].classList.add('done');
+      if(i < steps.length){
+        steps[i].classList.add('active');
+        statusText.textContent = aiTexts[i].text;
+        statusSub.textContent = aiTexts[i].sub(state);
+        i++;
+        setTimeout(tick, 950);
+      } else {
+        stepsDone = true;
+        maybeFinish();
+      }
+    }
+    function maybeFinish(){
+      if(stepsDone && dataReady) setTimeout(()=> onDone(resultData), 300);
+    }
+
+    tick();
+
+    const targetingOptions = generateTargetingMath();
+    generateAiCopy(targetingOptions).then(result=>{
+      resultData = result;
+      dataReady = true;
+      maybeFinish();
+    });
+  }
+
+  // ---------------- CONFIRM SCREEN ----------------
+  function renderConfirm(){
+    const opt = currentOptions[state.selectedOption];
+    document.getElementById('confirmSummary').innerHTML = `
+      <div class="summary-row"><span class="summary-key">Pincode</span><span class="summary-val">${state.pincode}</span></div>
+      <div class="summary-row"><span class="summary-key">Area</span><span class="summary-val">${state.areaLabel}</span></div>
+      <div class="summary-row"><span class="summary-key">Target zone</span><span class="summary-val">${state.pincodeMode === 'radius' ? state.radiusKm + ' km radius' : 'Exact pincode only'}</span></div>
+      <div class="summary-row"><span class="summary-key">Strategy</span><span class="summary-val">${opt.title}</span></div>
+      <div class="summary-row"><span class="summary-key">Daily budget</span><span class="summary-val">₹${state.budget.toLocaleString('en-IN')}</span></div>
+      <div class="summary-row"><span class="summary-key">Duration</span><span class="summary-val">${state.duration} din</span></div>
+      <div class="summary-row"><span class="summary-key">Total spend</span><span class="summary-val">₹${(state.budget * state.duration).toLocaleString('en-IN')}</span></div>
+      <div class="summary-row"><span class="summary-key">Payment</span><span class="summary-val">${state.payment}</span></div>
+      <div class="summary-row"><span class="summary-key">Est. daily clicks</span><span class="summary-val">~${opt.clicks}</span></div>
+    `;
+    document.getElementById('previewHeadline').textContent = opt.headline;
+    document.getElementById('previewText').textContent = opt.text;
+
+    const sourceTag = document.getElementById('copySourceTag');
+    if(opt.aiGenerated){
+      sourceTag.textContent = '✨ AI GENERATED';
+      sourceTag.style.color = 'var(--neon)';
+      sourceTag.style.background = 'var(--neon-soft)';
+    } else if(state.aiCopyFailed){
+      sourceTag.textContent = '⚠ AI FAILED — TEMPLATE USED';
+      sourceTag.style.color = 'var(--danger)';
+      sourceTag.style.background = 'rgba(255,92,122,0.12)';
+    } else {
+      sourceTag.textContent = 'TEMPLATE (add business details for AI copy)';
+      sourceTag.style.color = 'var(--text-faint)';
+      sourceTag.style.background = 'var(--bg-soft)';
+    }
+
+    updatePreviewImageBox();
+    uploadZone.style.display = state.uploadedImageDataUrl ? 'none' : 'block';
+
+    const warnCard = document.getElementById('metaWarningCard');
+    warnCard.style.display = state.metaConnected ? 'none' : 'flex';
+  }
+
+  document.getElementById('regenBtn').addEventListener('click', async function(){
+    this.disabled = true;
+    this.textContent = '↻ Likh raha hai...';
+    const targetingOptions = generateTargetingMath();
+    const newCopy = await generateAiCopy(targetingOptions);
+    // keep existing targeting stats, just refresh copy for selected option
+    currentOptions = currentOptions.map((opt,i)=> ({...opt, headline:newCopy[i].headline, text:newCopy[i].text, aiGenerated:newCopy[i].aiGenerated}));
+    renderConfirm();
+    this.disabled = false;
+    this.textContent = '↻ Regenerate copy';
+  });
+
+  // ---------------- DASHBOARD ----------------
+  function animateCount(el, target, suffix='', prefix=''){
+    let cur = 0;
+    const steps = 30;
+    const inc = target / steps;
+    let n = 0;
+    const t = setInterval(()=>{
+      cur += inc; n++;
+      if(n >= steps){ cur = target; clearInterval(t); }
+      el.textContent = prefix + Math.round(cur).toLocaleString('en-IN') + suffix;
+    }, 30);
+  }
+  function renderDashboard(){
+    const opt = currentOptions[state.selectedOption];
+    const impressions = opt.reach;
+    const clicks = opt.clicks;
+    const ctr = ((clicks/impressions)*100).toFixed(1);
+    animateCount(document.getElementById('mImpressions'), impressions);
+    animateCount(document.getElementById('mClicks'), clicks);
+    document.getElementById('mCtr').textContent = ctr + '%';
+    document.getElementById('mCpc').textContent = '₹' + opt.cpc;
+
+    // simple sparkline chart
+    const svg = document.getElementById('chartSvg');
+    const pts = Array.from({length:7}, ()=> 20 + Math.random()*60);
+    const max = Math.max(...pts), min = Math.min(...pts);
+    const norm = pts.map((p,idx)=>{
+      const x = (idx/(pts.length-1)) * 290 + 5;
+      const y = 80 - ((p - min)/(max-min || 1)) * 65;
+      return [x,y];
+    });
+    const path = norm.map((p,i)=> (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const areaPath = path + ` L${norm[norm.length-1][0]},85 L${norm[0][0]},85 Z`;
+    svg.innerHTML = `
+      <defs>
+        <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#00f0c0" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="#00f0c0" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="${areaPath}" fill="url(#grad)" />
+      <path d="${path}" fill="none" stroke="#00f0c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${norm.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="2.5" fill="#0b0e14" stroke="#00f0c0" stroke-width="1.5"/>`).join('')}
+    `;
+    if(state.lastCampaignId){
+      document.getElementById('liveText').textContent = 'Campaign Bana Diya — Review Pending ✓';
+      document.getElementById('liveSince').innerHTML = `Campaign ID: ${state.lastCampaignId} • Payment: ${state.lastPaymentId} <br>⚠ PAUSED — Ads Manager mein review karke activate karo`;
+    } else {
+      document.getElementById('liveText').textContent = 'Campaign Live Hai 🎉';
+      document.getElementById('liveSince').textContent = `Started just now • ${state.city} • Demo data`;
+    }
+  }
+
+  // ---------------- LAUNCH: real Razorpay payment + Meta campaign ----------------
+  async function handleLaunchCampaign(){
+    const launchBtn = document.getElementById('launchBtn');
+    const totalAmount = state.budget * state.duration;
+
+    if(!state.metaConnected){
+      alert('Pehle Meta Ads account connect karo.');
+      return;
+    }
+
+    launchBtn.disabled = true;
+    launchBtn.textContent = 'Order ban raha hai...';
+
+    try{
+      // Step 1: create a Razorpay order on the backend
+      const orderRes = await fetch(`${BACKEND_URL}/api/payment/create-order`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          amountInRupees: totalAmount,
+          notes: { pincode: state.pincode, city: state.city, duration: state.duration }
+        })
+      });
+      const orderData = await orderRes.json();
+      if(!orderData.orderId) throw new Error(orderData.error || 'Order create nahi ho paya');
+
+      launchBtn.textContent = 'Payment window khol rahe hain...';
+
+      // Step 2: open Razorpay checkout, restricted to UPI / Net Banking per user choice
+      const selectedMethod = paymentMethods.find(p => p.name === state.payment);
+      const methodConfig = {};
+      if(selectedMethod?.razorpayMethod === 'upi') methodConfig.upi = true;
+      if(selectedMethod?.razorpayMethod === 'netbanking') methodConfig.netbanking = true;
+
+      const rzpOptions = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        order_id: orderData.orderId,
+        name: 'AdGenie — RM Digital Marketing',
+        description: `Campaign budget — ${state.duration} din × ₹${state.budget}/day`,
+        method: Object.keys(methodConfig).length ? methodConfig : { upi:true, netbanking:true },
+        handler: async function(response){
+          await verifyAndCreateCampaign(response, launchBtn);
+        },
+        modal: {
+          ondismiss: function(){
+            launchBtn.disabled = false;
+            launchBtn.textContent = '🚀 Launch Campaign';
+          }
+        },
+        theme: { color: '#00c9a0' }
+      };
+
+      const rzp = new Razorpay(rzpOptions);
+      rzp.on('payment.failed', function(resp){
+        alert('Payment fail ho gaya: ' + (resp.error?.description || 'Unknown error'));
+        launchBtn.disabled = false;
+        launchBtn.textContent = '🚀 Launch Campaign';
+      });
+      rzp.open();
+
+    }catch(err){
+      console.error(err);
+      alert('Kuch gadbad ho gayi: ' + err.message + '\n\nBackend chal raha hai check karo (' + BACKEND_URL + ').');
+      launchBtn.disabled = false;
+      launchBtn.textContent = '🚀 Launch Campaign';
+    }
+  }
+
+  async function verifyAndCreateCampaign(rzpResponse, launchBtn){
+    launchBtn.textContent = 'Payment verify ho raha hai...';
+    try{
+      const verifyRes = await fetch(`${BACKEND_URL}/api/payment/verify`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          razorpay_order_id: rzpResponse.razorpay_order_id,
+          razorpay_payment_id: rzpResponse.razorpay_payment_id,
+          razorpay_signature: rzpResponse.razorpay_signature
+        })
+      });
+      const verifyData = await verifyRes.json();
+      if(!verifyData.success) throw new Error(verifyData.error || 'Payment verify nahi hua');
+
+      launchBtn.textContent = 'Campaign create ho raha hai...';
+
+      // Step 3: fetch user's ad accounts, then create a real (PAUSED) campaign
+      const acctRes = await fetch(`${BACKEND_URL}/auth/meta/ad-accounts`, { credentials:'include' });
+      const acctData = await acctRes.json();
+      const firstAccount = acctData?.data?.[0];
+      if(!firstAccount) throw new Error('Koi Meta Ad Account nahi mila tumhare login se');
+
+      const opt = currentOptions[state.selectedOption];
+      const campaignRes = await fetch(`${BACKEND_URL}/auth/meta/create-campaign`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          adAccountId: firstAccount.id,
+          campaignName: `AdGenie — ${state.areaLabel || state.city} — ${opt.title}`,
+          dailyBudgetPaise: state.budget * 100,
+          objective: 'OUTCOME_TRAFFIC'
+        })
+      });
+      const campaignData = await campaignRes.json();
+      if(!campaignData.success) throw new Error(campaignData.error || 'Campaign create nahi ho payi');
+
+      state.lastPaymentId = rzpResponse.razorpay_payment_id;
+      state.lastCampaignId = campaignData.campaign?.id;
+      state.campaignNote = campaignData.note;
+
+      goTo(6);
+    }catch(err){
+      console.error(err);
+      alert('Payment ho gaya lekin campaign create karne mein dikkat aayi: ' + err.message + '\n\nPayment ID: ' + rzpResponse.razorpay_payment_id + '\n(Ye save kar lo — refund/support ke liye chahiye hoga)');
+      launchBtn.disabled = false;
+      launchBtn.textContent = '🚀 Launch Campaign';
+    }
+  }
+
+  // ---------------- NAVIGATION ----------------
+  let currentScreen = 1;
+  const totalScreens = 6;
+
+  function goTo(n){
+    const screens = document.querySelectorAll('.screen');
+    screens.forEach(s=>{
+      s.classList.remove('active');
+    });
+    const target = document.querySelector(`.screen[data-screen="${n}"]`);
+    target.classList.add('active');
+    currentScreen = n;
+    updateProgress();
+    renderActionBar();
+    window.scrollTo(0,0);
+    target.scrollTop = 0;
+
+    if(n === 3){
+      runAiSequence((result)=>{ currentOptions = result; renderOptionCards(); goTo(4); });
+    }
+    if(n === 5){ renderConfirm(); }
+    if(n === 6){ renderDashboard(); }
+  }
+
+  function updateProgress(){
+    const dots = document.querySelectorAll('#progressDots span');
+    const mapped = Math.min(currentScreen, 5);
+    dots.forEach((d,i)=> d.classList.toggle('filled', i < mapped));
+    document.getElementById('progressDots').style.display = currentScreen === 6 ? 'none' : 'flex';
+    document.getElementById('statusPill').textContent = currentScreen === 6 ? 'LIVE (DEMO)' : 'DEMO MODE';
+  }
+
+  function updateNextBtn(){
+    const btn = document.getElementById('nextBtn');
+    if(btn){
+      if(currentScreen === 1) btn.disabled = !state.pincode;
+      if(currentScreen === 4) btn.disabled = state.selectedOption === null;
+    }
+    const launchBtn = document.getElementById('launchBtn');
+    if(launchBtn){
+      launchBtn.disabled = !state.metaConnected;
+      launchBtn.textContent = state.metaConnected ? '🚀 Launch Campaign' : '🔒 Connect Meta Ads first';
+    }
+  }
+
+  function renderActionBar(){
+    const bar = document.getElementById('actionBar');
+    if(currentScreen === 1){
+      bar.innerHTML = `<button class="btn btn-primary" id="nextBtn">Next: Budget &amp; Payment →</button>`;
+      document.getElementById('nextBtn').onclick = ()=> goTo(2);
+    } else if(currentScreen === 2){
+      bar.innerHTML = `
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="backBtn">← Back</button>
+          <button class="btn btn-primary" id="nextBtn">Generate Ads with AI ✨</button>
+        </div>`;
+      document.getElementById('backBtn').onclick = ()=> goTo(1);
+      document.getElementById('nextBtn').onclick = ()=> goTo(3);
+    } else if(currentScreen === 3){
+      bar.innerHTML = '';
+    } else if(currentScreen === 4){
+      bar.innerHTML = `
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="backBtn">← Back</button>
+          <button class="btn btn-primary" id="nextBtn" disabled>Continue →</button>
+        </div>`;
+      document.getElementById('backBtn').onclick = ()=> goTo(2);
+      document.getElementById('nextBtn').onclick = ()=> goTo(5);
+    } else if(currentScreen === 5){
+      bar.innerHTML = `
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="backBtn">← Edit</button>
+          <button class="btn btn-primary" id="launchBtn">🚀 Launch Campaign</button>
+        </div>`;
+      document.getElementById('backBtn').onclick = ()=> goTo(4);
+      document.getElementById('launchBtn').onclick = handleLaunchCampaign;
+    } else if(currentScreen === 6){
+      bar.innerHTML = `<button class="btn btn-ghost" id="restartBtn">+ Naya Campaign Banao</button>`;
+      document.getElementById('restartBtn').onclick = ()=>{
+        const wasMetaConnected = state.metaConnected;
+        state = {pincode:'', pincodeMode:'single', radiusKm:10, areaLabel:'', city:'', budget:500, duration:7, payment: paymentMethods[0].name, selectedOption:null, metaConnected: wasMetaConnected, bizName:'', bizOffer:'', uploadedImageDataUrl:null, aiCopyFailed:false};
+        setBudget(500);
+        pincodeInput.value = '';
+        pincodeStatus.className = 'pincode-status';
+        pincodeStatus.textContent = '';
+        pincodeResultBox.classList.remove('show');
+        document.querySelectorAll('.mode-opt').forEach(o=>o.classList.toggle('active', o.dataset.mode==='single'));
+        radiusRow.style.display = 'none';
+        document.getElementById('bizName').value = '';
+        document.getElementById('bizOffer').value = '';
+        uploadInput.value = '';
+        uploadPreviewWrap.style.display = 'none';
+        uploadZone.style.display = 'block';
+        renderPayments();
+        renderMetaCard();
+        document.querySelectorAll('.duration-opt').forEach(o=>o.classList.toggle('active', o.dataset.days==='7'));
+        goTo(1);
+      };
+    }
+    updateNextBtn();
+  }
+
+  renderActionBar();
+})();
+</script>
+
+</body>
+</html>
